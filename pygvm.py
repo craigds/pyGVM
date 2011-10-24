@@ -4,6 +4,7 @@ Simplified port of GVM for python.
 
 GVM homepage: http://www.tomgibara.com/clustering/fast-spatial/java-library
 """
+import heapq
 import sys
 
 MAX_FLOAT = sys.float_info.max
@@ -124,6 +125,9 @@ class ClusterPair(object):
         self.value = None
         self.index = None
 
+    def __lt__(self, other):
+        return self.value < other.value
+
     def update(self):
         self.value = self.c1.test_cluster(self.c2) - self.c1.variance - self.c2.variance
 
@@ -132,16 +136,8 @@ class ClusterPairs(object):
     def __init__(self):
         self.pairs = []
 
-    # TODO: this is potentially slow since it's sorting the whole list each time _sort() is called.
-    # should use a binary-search sort (or a heap, like the java version)
-    def _sort(self):
-        self.pairs.sort(key=lambda p: -p.value)
-        for i, p in enumerate(self.pairs):
-            p.index = i
-
     def add(self, pair):
-        self.pairs.append(pair)
-        self._sort()
+        heapq.heappush(self.pairs, pair)
 
     def peek(self):
         if self.pairs:
@@ -151,7 +147,7 @@ class ClusterPairs(object):
 
     def reprioritize(self, pair):
         pair.update()
-        self._sort()
+        heapq.heapify(self.pairs)
 
 
 class Clusters(object):
