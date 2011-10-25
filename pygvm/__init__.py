@@ -31,7 +31,10 @@ class Cluster(object):
         self.pairs = []
 
     def center(self):
-        return self.m1 / self.mass
+        if self.mass:
+            return [coord / self.mass for coord in self.m1]
+        else:
+            return self.m1[:]
 
     def clear(self):
         """
