@@ -9,7 +9,11 @@ import sys
 
 VERSION = (0, 0, 'alpha')
 
-MAX_FLOAT = sys.float_info.max
+try:
+    MAX_FLOAT = sys.float_info.max
+except AttributeError:
+    # python <2.6 didn't have float_info
+    MAX_FLOAT = 9999999999999999999999999.0
 
 
 class Cluster(object):
