@@ -64,7 +64,7 @@ class Cluster(object):
         """
         Adds a point to the cluster.
         """
-        if not self.members:
+        if not self.mass:
             self.set(mass, coords)
         else:
             if mass != 0:
