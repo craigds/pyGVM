@@ -30,6 +30,9 @@ class Cluster(object):
         self.members = []
         self.pairs = []
 
+    def center(self):
+        return self.m1 / self.mass
+
     def clear(self):
         """
         Completely clears this cluster. All points and their associated mass is removed
