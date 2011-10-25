@@ -50,13 +50,8 @@ class Cluster(object):
         """
         Sets this cluster equal to a single point.
         """
-        if mass == 0:
-            if len(self.members):
-                self.m1 = [0] * len(self.m1)
-                self.m2 = [0] * len(self.m2)
-        else:
-            self.m1 = [mass * coord for coord in coords]
-            self.m2 = [mass * coord * coord for coord in coords]
+        self.m1 = [mass * coord for coord in coords]
+        self.m2 = [mass * coord * coord for coord in coords]
         self.mass = mass
         self.variance = 0.0
 
@@ -79,8 +74,8 @@ class Cluster(object):
         Adds the specified cluster to this cluster.
         """
         self.mass += cluster.mass
-        self.m1 = [sum(*row) for row in zip(self.m1, cluster.m1)]
-        self.m2 = [sum(*row) for row in zip(self.m2, cluster.m2)]
+        self.m1 = map(sum, zip(self.m1, cluster.m1))
+        self.m2 = map(sum, zip(self.m2, cluster.m2))
         self.update()
 
     def test(self, mass, coords):
@@ -135,10 +130,10 @@ class ClusterPair(object):
         self.c1 = c1
         self.c2 = c2
         self.value = None
-        self.index = None
 
     def __lt__(self, other):
-        return self.value < other.value
+        # not a typo! makes the heap algorithm have large stuff first
+        return self.value > other.value
 
     def update(self):
         self.value = self.c1.test_cluster(self.c2) - self.c1.variance - self.c2.variance
