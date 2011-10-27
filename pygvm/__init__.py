@@ -29,11 +29,15 @@ class Cluster(object):
         self.members = set()
         self.pairs = []
 
+    @property
     def center(self):
         if self.mass:
             return [coord / self.mass for coord in self.m1]
         else:
             return self.m1[:]
+
+    def __len__(self):
+        return len(self.members)
 
     def clear(self):
         """
@@ -74,7 +78,7 @@ class Cluster(object):
         """
         Adds the specified cluster to this cluster.
         """
-        self.add(cluster.mass, cluster.center(), cluster.members)
+        self.add(cluster.mass, cluster.center, cluster.members)
 
     def remove(self, mass, coords, members):
         """
@@ -133,7 +137,7 @@ class Cluster(object):
             self.variance = Clusters.correct(total / self.mass)
 
     def __repr__(self):
-        return u'<Cluster: %d nodes>' % len(self.members)
+        return u'<Cluster: %d nodes>' % len(self)
 
 
 class ClusterPair(object):
