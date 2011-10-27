@@ -26,7 +26,7 @@ class Cluster(object):
         self.m2 = [0] * clusters.dimension
 
         self.variance = 0.0
-        self.members = []
+        self.members = set()
         self.pairs = []
 
     def center(self):
@@ -43,7 +43,7 @@ class Cluster(object):
         self.m1 = [0] * len(self.m1)
         self.m2 = [0] * len(self.m2)
         self.variance = 0.0
-        self.members = []
+        self.members = set()
 
     def set(self, mass, coords, members):
         """
@@ -53,7 +53,7 @@ class Cluster(object):
         self.m2 = [mass * coord * coord for coord in coords]
         self.mass = mass
         self.variance = 0.0
-        self.members = members
+        self.members = set(members)
 
     def add(self, mass, coords, members):
         """
@@ -67,7 +67,7 @@ class Cluster(object):
                 for i, coord in enumerate(coords):
                     self.m1[i] += coord * mass
                     self.m2[i] += coord * coord * mass
-                self.members.extend(members)
+                self.members.update(members)
                 self.update()
 
     def add_cluster(self, cluster):
@@ -210,7 +210,7 @@ class Clusters(object):
                 if c1.mass < c2.mass:
                     (c1, c2) = (c2, c1)
                 c1.add_cluster(c2)
-                c2.members = []
+                c2.members = set()
 
     def results(self):
         return self.clusters[:]
