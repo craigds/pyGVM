@@ -76,6 +76,19 @@ class Cluster(object):
         """
         self.add(cluster.mass, cluster.center(), cluster.members)
 
+    def remove(self, mass, coords, members):
+        """
+        Removes a point from the cluster.
+        This is not strictly needed for GVM, as members are never removed,
+        but it may be useful for creating derivative algorithms.
+        """
+        self.mass -= mass
+        for i, coord in enumerate(coords):
+            self.m1[i] -= coord * mass
+            self.m2[i] -= coord * mass * mass
+        self.members.difference_update(members)
+        self.update()
+
     def test(self, mass, coords):
         """
         Computes the change in this clusters variance if it were to have a new point added to it.
