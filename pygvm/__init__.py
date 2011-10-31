@@ -6,7 +6,7 @@ GVM homepage: http://www.tomgibara.com/clustering/fast-spatial/java-library
 import heapq
 import sys
 
-VERSION = (0, 0, 'alpha')
+VERSION = (0, 1, 0)
 
 try:
     MAX_FLOAT = sys.float_info.max
