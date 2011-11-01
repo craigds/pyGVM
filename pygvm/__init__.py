@@ -227,7 +227,7 @@ class Clusters(object):
                 if c1.mass < c2.mass:
                     (c1, c2) = (c2, c1)
                 c1.add_cluster(c2)
-                c2.members = set()
+                c2.set(mass, coords, members)
 
     def results(self):
         return self.clusters[:]
