@@ -3,10 +3,13 @@ Simplified port of GVM for python.
 
 GVM homepage: http://www.tomgibara.com/clustering/fast-spatial/java-library
 """
-import heapq
+import bisect
+import collections
+from pygvm.libs import heapq
 import sys
+from array import array
 
-VERSION = (0, 1, 1)
+VERSION = (0, 1, 'dev')
 
 try:
     MAX_FLOAT = sys.float_info.max
@@ -26,8 +29,8 @@ class Cluster(object):
         self.m2 = [0] * clusters.dimension
 
         self.variance = 0.0
-        self.members = set()
         self.pairs = []
+        self.set_members([])
 
     @property
     def center(self):
@@ -47,9 +50,9 @@ class Cluster(object):
         self.m1 = [0] * len(self.m1)
         self.m2 = [0] * len(self.m2)
         self.variance = 0.0
-        self.members = set()
+        self.set_members([])
 
-    def set(self, mass, coords, members):
+    def set(self, mass, coords, key):
         """
         Sets this cluster equal to a single point.
         """
@@ -57,30 +60,49 @@ class Cluster(object):
         self.m2 = [mass * coord * coord for coord in coords]
         self.mass = mass
         self.variance = 0.0
-        self.members = set(members)
+        self.set_members([])
+        if key is not None:
+            self.add_members([key])
 
-    def add(self, mass, coords, members):
+    def add(self, mass, coords, key):
         """
         Adds a point to the cluster.
         """
         if not self.mass:
-            self.set(mass, coords, members)
+            self.set(mass, coords, key)
         else:
             if mass != 0:
                 self.mass += mass
                 for i, coord in enumerate(coords):
                     self.m1[i] += coord * mass
                     self.m2[i] += coord * coord * mass
-                self.members.update(members)
+                if key is not None:
+                    self.add_members([key])
                 self.update()
+
+    def set_members(self, keys):
+        self.members = set(keys)
+
+    def add_members(self, keys):
+        self.members.update(keys)
+
+    def remove_member(self, key):
+        self.members.remove(key)
+
+    def remove_members(self, keys):
+        self.members.difference_update(keys)
+
+    def __contains__(self, key):
+        return key in self.members
 
     def add_cluster(self, cluster):
         """
         Adds the specified cluster to this cluster.
         """
-        self.add(cluster.mass, cluster.center, cluster.members)
+        self.add(cluster.mass, cluster.center, None)
+        self.add_members(cluster.members, already_sorted=True)
 
-    def remove(self, mass, coords, members):
+    def remove(self, mass, coords, key):
         """
         Removes a point from the cluster.
         This is not strictly needed for GVM, as members are never removed,
@@ -90,7 +112,7 @@ class Cluster(object):
         for i, coord in enumerate(coords):
             self.m1[i] -= coord * mass
             self.m2[i] -= coord * mass * mass
-        self.members.difference_update(members)
+        self.remove_member(key)
         self.update()
 
     def test(self, mass, coords):
@@ -181,53 +203,78 @@ class Clusters(object):
         else:
             return 0.0
 
-    def __init__(self, dimension, capacity):
+    def __init__(self, dimension, capacity, cluster_factory=Cluster):
         self.dimension = dimension
         self.capacity = capacity
         self.clusters = []
         self.pairs = ClusterPairs()
+        self.cluster_factory = cluster_factory
 
     def clear(self):
         self.clusters = []
         self.pairs = {}
 
-    def create_cluster(self):
-        return Cluster(self)
+    def add(self, mass, coords, key):
+        self.add_bulk([(mass, coords, key)])
 
-    def add(self, mass, coords, members):
-        if mass == 0:
-            return
-        if len(self.clusters) < self.capacity:
-            cluster = self.create_cluster()
-            self.clusters.append(cluster)
-            cluster.set(mass, coords, members)
-            self._add_pairs()
-        else:
-            #identify cheapest merge
-            merge_pair = self.pairs.peek()
-            merge_t = merge_pair and merge_pair.value or MAX_FLOAT
+    def add_bulk(self, items, step=1000):
+        """
+        Takes a iterable of tuples:
+            [(mass, (x, y), key), ...]
 
-            # find cheapest addition
-            addition_c = None
-            addition_t = MAX_FLOAT
-            for cluster in self.clusters:
-                t = cluster.test(mass, coords)
-                if t < addition_t:
-                    addition_c = cluster
-                    addition_t = t
+        This method can be much faster than calling add() repeatedly.
+        """
 
-            if addition_t <= merge_t:
-                # chose addition
-                addition_c.add(mass, coords, members)
-                self._update_pairs(addition_c)
-            else:
-                # choose merge
-                c1 = merge_pair.c1
-                c2 = merge_pair.c2
-                if c1.mass < c2.mass:
-                    (c1, c2) = (c2, c1)
-                c1.add_cluster(c2)
-                c2.set(mass, coords, members)
+        # doing individual add/append for each key added is slow,
+        # so we delay it until a bunch of things have been added instead.
+        cluster_keys = collections.defaultdict(list)
+
+        def _add_members():
+            for c, new_members in cluster_keys.items():
+                c.add_members(new_members)
+                del cluster_keys[c]
+        try:
+            for i, (mass, coords, key) in enumerate(items):
+                if mass == 0:
+                    continue
+                if len(self.clusters) < self.capacity:
+                    cluster = self.cluster_factory(self)
+                    self.clusters.append(cluster)
+                    cluster.set(mass, coords, key)
+                    self._add_pairs()
+                else:
+                    #identify cheapest merge
+                    merge_pair = self.pairs.peek()
+                    merge_t = merge_pair and merge_pair.value or MAX_FLOAT
+
+                    # find cheapest addition
+                    addition_c = None
+                    addition_t = MAX_FLOAT
+                    for cluster in self.clusters:
+                        t = cluster.test(mass, coords)
+                        if t < addition_t:
+                            addition_c = cluster
+                            addition_t = t
+
+                    if addition_t <= merge_t:
+                        # chose addition
+                        addition_c.add(mass, coords, None)
+                        if key is not None:
+                            cluster_keys[addition_c].append(key)
+                        self._update_pairs(addition_c)
+                    else:
+                        # choose merge
+                        c1 = merge_pair.c1
+                        c2 = merge_pair.c2
+                        if c1.mass < c2.mass:
+                            (c1, c2) = (c2, c1)
+                        c1.add_cluster(c2)
+                        cluster_keys[c1].extend(cluster_keys.pop(c2))
+                        c2.set(mass, coords, None)
+                if i % step == 0:
+                    _add_members()
+        finally:
+            _add_members()
 
     def results(self):
         return self.clusters[:]
