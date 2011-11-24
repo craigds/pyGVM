@@ -162,6 +162,61 @@ class Cluster(object):
         return u'<Cluster: %d nodes>' % len(self)
 
 
+class SortedArrayCluster(Cluster):
+    """
+    This type of cluster uses a python array instead of a set to store members.
+    This is much more memory efficient than standard Clusters.
+
+    Insertion complexity:
+      * If no keys are provided, insertion is O(1).
+      * If keys are inserted in sorted order, insertion is O(log n)
+      * If keys are inserted in unknown order, insertion is O(n)
+
+    Merge complexity:
+      * Merge runtime is O(n log n)
+    """
+    def __init__(self, clusters, array_type='i'):
+        self._array_type = array_type
+        super(SortedArrayCluster, self).__init__(clusters)
+
+    def set_members(self, keys, already_sorted=False):
+        if not already_sorted:
+            keys = sorted(keys)
+        self.members = array(self._array_type, keys)
+
+    def add_members(self, keys, already_sorted=False):
+        if not keys:
+            return
+        if not already_sorted:
+            keys = sorted(keys)
+        if (not self.members) or keys[0] > self.members[-1]:
+            self.members.extend(keys)
+        else:
+            # need to merge sorted arrays
+            old_members = self.members
+            self.set_members(heapq.merge(old_members, keys), already_sorted=True)
+
+    def remove_member(self, key):
+        pos = bisect.bisect_left(self.members, key)
+        if pos < len(self.members) and self.members[pos] == key:
+            self.members.pop(pos)
+
+    def remove_members(self, keys):
+        if not keys:
+            return
+        elif len(keys) == 1:
+            self.remove_member(keys[0])
+        else:
+            keys = set(keys)
+            self.set_members((member for member in self.members if member not in keys), already_sorted=True)
+
+    def __contains__(self, key):
+        pos = bisect.bisect_left(self.members, key)
+        if pos >= len(self.members):
+            return False
+        return self.members[pos] == key
+
+
 class ClusterPair(object):
     def __init__(self, c1, c2):
         self.c1 = c1
