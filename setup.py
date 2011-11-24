@@ -11,5 +11,5 @@ setup(
     author='Craig de Stigter',
     author_email='craig.ds@gmail.com',
     url='http://github.com/craigds/pygvm',
-    packages=['pygvm'],
+    packages=['pygvm', 'pygvm.libs'],
 )
