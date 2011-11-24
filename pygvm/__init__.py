@@ -80,10 +80,10 @@ class Cluster(object):
                     self.add_members([key])
                 self.update()
 
-    def set_members(self, keys):
+    def set_members(self, keys, already_sorted=False):
         self.members = set(keys)
 
-    def add_members(self, keys):
+    def add_members(self, keys, already_sorted=False):
         self.members.update(keys)
 
     def remove_member(self, key):
