@@ -324,7 +324,7 @@ class Clusters(object):
                         if c1.mass < c2.mass:
                             (c1, c2) = (c2, c1)
                         c1.add_cluster(c2)
-                        cluster_keys[c1].extend(cluster_keys.pop(c2))
+                        cluster_keys[c1].extend(cluster_keys.pop(c2, []))
                         c2.set(mass, coords, None)
                 if i % step == 0:
                     _add_members()
