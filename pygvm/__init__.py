@@ -208,7 +208,7 @@ class SortedArrayCluster(Cluster):
             self.remove_member(keys[0])
         else:
             keys = set(keys)
-            self.set_members((member for member in self.members if member not in keys), already_sorted=True)
+            self.set_members([member for member in self.members if member not in keys], already_sorted=True)
 
     def __contains__(self, key):
         pos = bisect.bisect_left(self.members, key)
