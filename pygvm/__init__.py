@@ -277,6 +277,9 @@ class Clusters(object):
         self.clusters = []
         self.pairs = ClusterPairs()
         self.cluster_factory = cluster_factory
+        for i in range(capacity):
+            self.clusters.append(self.cluster_factory(self))
+            self._add_pairs()
 
     def clear(self):
         self.clusters = []
@@ -305,40 +308,34 @@ class Clusters(object):
             for i, (mass, coords, key) in enumerate(items):
                 if mass == 0:
                     continue
-                if len(self.clusters) < self.capacity:
-                    cluster = self.cluster_factory(self)
-                    self.clusters.append(cluster)
-                    cluster.set(mass, coords, key)
-                    self._add_pairs()
+                #identify cheapest merge
+                merge_pair = self.pairs.peek()
+                merge_t = merge_pair and merge_pair.value or MAX_FLOAT
+
+                # find cheapest addition
+                addition_c = None
+                addition_t = MAX_FLOAT
+                for cluster in self.clusters:
+                    t = cluster.test(mass, coords)
+                    if t < addition_t:
+                        addition_c = cluster
+                        addition_t = t
+
+                if addition_t <= merge_t:
+                    # chose addition
+                    addition_c.add(mass, coords, None)
+                    if key is not None:
+                        cluster_keys[addition_c].append(key)
+                    self._update_pairs(addition_c)
                 else:
-                    #identify cheapest merge
-                    merge_pair = self.pairs.peek()
-                    merge_t = merge_pair and merge_pair.value or MAX_FLOAT
-
-                    # find cheapest addition
-                    addition_c = None
-                    addition_t = MAX_FLOAT
-                    for cluster in self.clusters:
-                        t = cluster.test(mass, coords)
-                        if t < addition_t:
-                            addition_c = cluster
-                            addition_t = t
-
-                    if addition_t <= merge_t:
-                        # chose addition
-                        addition_c.add(mass, coords, None)
-                        if key is not None:
-                            cluster_keys[addition_c].append(key)
-                        self._update_pairs(addition_c)
-                    else:
-                        # choose merge
-                        c1 = merge_pair.c1
-                        c2 = merge_pair.c2
-                        if c1.mass < c2.mass:
-                            (c1, c2) = (c2, c1)
-                        c1.add_cluster(c2)
-                        cluster_keys[c1].extend(cluster_keys.pop(c2, []))
-                        c2.set(mass, coords, None)
+                    # choose merge
+                    c1 = merge_pair.c1
+                    c2 = merge_pair.c2
+                    if c1.mass < c2.mass:
+                        (c1, c2) = (c2, c1)
+                    c1.add_cluster(c2)
+                    cluster_keys[c1].extend(cluster_keys.pop(c2, []))
+                    c2.set(mass, coords, None)
                 if i % step == 0:
                     _add_members()
         finally:
