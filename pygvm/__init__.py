@@ -68,17 +68,30 @@ class Cluster(object):
         """
         Adds a point to the cluster.
         """
-        if not self.mass:
-            self.set(mass, coords, key)
-        else:
-            if mass != 0:
-                self.mass += mass
-                for i, coord in enumerate(coords):
-                    self.m1[i] += coord * mass
-                    self.m2[i] += coord * coord * mass
-                if key is not None:
-                    self.add_members([key])
-                self.update()
+        self.add_bulk([(mass, coords, key)])
+
+    def add_bulk(self, items):
+        """
+        Adds a number of points to the cluster.
+        This is significantly faster than calling add() a bunch of times.
+        Expects an iterable of tuples, each of which would form the arguments to add().
+        i.e.: [(mass, coords, key), ...]
+        """
+        keys = []
+        for mass, coords, key in items:
+            if not self.mass:
+                self.set(mass, coords, key)
+            else:
+                if mass != 0:
+                    self.mass += mass
+                    for i, coord in enumerate(coords):
+                        self.m1[i] += coord * mass
+                        self.m2[i] += coord * coord * mass
+                    if key is not None:
+                        keys.append(key)
+        if keys:
+            self.add_members(keys)
+        self.update()
 
     def set_members(self, keys, already_sorted=False):
         self.members = set(keys)
