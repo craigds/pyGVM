@@ -316,6 +316,7 @@ class Clusters(object):
                     if key is not None:
                         cluster_keys[c].append(key)
                     self._update_pairs(c)
+                    self._populated_clusters += 1
                     continue
 
                 #identify cheapest merge
