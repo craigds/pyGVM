@@ -274,7 +274,6 @@ class Clusters(object):
     def __init__(self, dimension, capacity, cluster_factory=Cluster):
         self.dimension = dimension
         self.capacity = capacity
-        self._populated_clusters = 0
         self.clusters = []
         self.pairs = ClusterPairs()
         self.cluster_factory = cluster_factory
@@ -309,15 +308,21 @@ class Clusters(object):
             for i, (mass, coords, key) in enumerate(items):
                 if mass == 0:
                     continue
-                if self._populated_clusters < self.capacity:
-                    # *always* populate empty clusters first
-                    c = self.clusters[self._populated_clusters]
+
+                c = None
+                for c in self.clusters:
+                    if not (cluster_keys[c] or c.members):
+                        # *always* populate empty clusters first
+                        break
+                else:
+                    c = None
+                if c:
                     c.add(mass, coords, None)
                     if key is not None:
                         cluster_keys[c].append(key)
                     self._update_pairs(c)
-                    self._populated_clusters += 1
                     continue
+
 
                 #identify cheapest merge
                 merge_pair = self.pairs.peek()
@@ -346,6 +351,7 @@ class Clusters(object):
                         (c1, c2) = (c2, c1)
                     c1.add_cluster(c2)
                     cluster_keys[c1].extend(cluster_keys.pop(c2, []))
+                    cluster_keys[c2] = [key]
                     c2.set(mass, coords, None)
                 if i % step == 0:
                     _add_members()
