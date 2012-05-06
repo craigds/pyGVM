@@ -323,7 +323,6 @@ class Clusters(object):
                     self._update_pairs(c)
                     continue
 
-
                 #identify cheapest merge
                 merge_pair = self.pairs.peek()
                 merge_t = merge_pair and merge_pair.value or MAX_FLOAT
@@ -351,7 +350,8 @@ class Clusters(object):
                         (c1, c2) = (c2, c1)
                     c1.add_cluster(c2)
                     cluster_keys[c1].extend(cluster_keys.pop(c2, []))
-                    cluster_keys[c2] = [key]
+                    if key is not None:
+                        cluster_keys[c2] = [key]
                     c2.set(mass, coords, None)
                 if i % step == 0:
                     _add_members()
