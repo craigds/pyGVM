@@ -12,4 +12,13 @@ setup(
     author_email='craig.ds@gmail.com',
     url='http://github.com/craigds/pygvm',
     packages=['pygvm', 'pygvm.libs'],
+    classifiers = [
+        "Development Status :: 4 - Beta",
+        "Environment :: Web Environment",
+        "Intended Audience :: Developers",
+        "License :: OSI Approved :: BSD License",
+        "Operating System :: OS Independent",
+        "Programming Language :: Python",
+        "Topic :: Utilities",
+    ]
 )
