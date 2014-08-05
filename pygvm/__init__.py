@@ -9,7 +9,7 @@ from pygvm.libs import heapq
 import sys
 from array import array
 
-VERSION = (0, 2, 5)
+VERSION = (0, 2, 6)
 
 try:
     MAX_FLOAT = sys.float_info.max
