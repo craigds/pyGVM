@@ -1,7 +1,8 @@
 
 Simplified port of GVM for python.
 
-.. image:: https://secure.travis-ci.org/craigds/pygvm.png?branch=master
+.. image:: https://travis-ci.org/craigds/pyGVM.svg?branch=master
+    :target: https://travis-ci.org/craigds/pyGVM
 
 GVM homepage: http://www.tomgibara.com/clustering/fast-spatial/java-library
 
