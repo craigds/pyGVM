@@ -5,17 +5,14 @@ GVM homepage: http://www.tomgibara.com/clustering/fast-spatial/java-library
 """
 import bisect
 import collections
-from pygvm.libs import heapq
+import heapq
 import sys
 from array import array
 
-VERSION = (0, 2, 6)
+VERSION = (0, 3, 'x')
 
-try:
-    MAX_FLOAT = sys.float_info.max
-except AttributeError:
-    # python <2.6 didn't have float_info
-    MAX_FLOAT = 9999999999999999999999999.0
+
+MAX_FLOAT = sys.float_info.max
 
 
 class Cluster(object):
