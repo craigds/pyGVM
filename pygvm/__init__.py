@@ -9,7 +9,7 @@ import heapq
 import sys
 from array import array
 
-VERSION = (0, 3, 'x')
+VERSION = (0, 3, 'a')
 
 
 MAX_FLOAT = sys.float_info.max
@@ -18,7 +18,7 @@ MAX_FLOAT = sys.float_info.max
 class Cluster(object):
     def __init__(self, clusters):
         self.removed = False
-        self.mass = 1.0
+        self.mass = 0.0
 
         # mass-weighted coordinate sum
         self.m1 = [0] * clusters.dimension
@@ -32,9 +32,9 @@ class Cluster(object):
     @property
     def center(self):
         if self.mass:
-            return [coord / self.mass for coord in self.m1]
+            return tuple([coord / self.mass for coord in self.m1])
         else:
-            return self.m1[:]
+            return None
 
     def __len__(self):
         return len(self.members)
@@ -274,9 +274,6 @@ class Clusters(object):
         self.clusters = []
         self.pairs = ClusterPairs()
         self.cluster_factory = cluster_factory
-        for i in range(capacity):
-            self.clusters.append(self.cluster_factory(self))
-            self._add_pairs()
 
     def clear(self):
         self.clusters = []
@@ -292,6 +289,17 @@ class Clusters(object):
 
         This method can be much faster than calling add() repeatedly.
         """
+        allow_merge = True
+        if len(self.clusters) < self.capacity:
+            # create some clusters
+            num_to_add = min(len(items), self.capacity - len(self.clusters))
+            for i in range(num_to_add):
+                self.clusters.append(self.cluster_factory(self))
+
+            allow_merge = len(self.clusters) == self.capacity
+            if allow_merge:
+                # finished adding clusters, so we can populate pairs.
+                self._add_pairs()
 
         # doing individual add/append for each key added is slow,
         # so we delay it until a bunch of things have been added instead.
@@ -301,6 +309,7 @@ class Clusters(object):
             for c, new_members in cluster_keys.items():
                 c.add_members(new_members)
                 del cluster_keys[c]
+
         try:
             for i, (mass, coords, key) in enumerate(items):
                 if mass == 0:
@@ -313,16 +322,22 @@ class Clusters(object):
                         break
                 else:
                     c = None
-                if c:
+
+                if c is not None:
+                    # a cluster is empty. add to that cluster and continue
                     c.add(mass, coords, None)
                     if key is not None:
                         cluster_keys[c].append(key)
                     self._update_pairs(c)
                     continue
 
-                #identify cheapest merge
-                merge_pair = self.pairs.peek()
-                merge_t = merge_pair and merge_pair.value or MAX_FLOAT
+                if allow_merge:
+                    # identify cheapest merge
+                    merge_pair = self.pairs.peek()
+                    merge_t = merge_pair.value if merge_pair else MAX_FLOAT
+                else:
+                    # never merge if we still haven't assigned at least one point per cluster.
+                    merge_t = MAX_FLOAT
 
                 # find cheapest addition
                 addition_c = None

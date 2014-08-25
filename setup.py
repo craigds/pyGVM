@@ -11,7 +11,7 @@ setup(
     author='Craig de Stigter',
     author_email='craig.ds@gmail.com',
     url='http://github.com/craigds/pygvm',
-    packages=['pygvm', 'pygvm.libs'],
+    packages=['pygvm'],
     classifiers = [
         "Development Status :: 4 - Beta",
         "Environment :: Web Environment",
