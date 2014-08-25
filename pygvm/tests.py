@@ -1,7 +1,14 @@
-import unittest2
+#/usr/bin/env python
+import sys
+
+if sys.version_info < (2, 7):
+    import unittest2 as unittest
+else:
+    import unittest
+
 from pygvm import Clusters
 
-class TestClusters(unittest2.TestCase):
+class TestClusters(unittest.TestCase):
     def test_empty_clusters(self):
         cs = Clusters(dimension=2, capacity=2)
 
@@ -38,3 +45,6 @@ class TestClusters(unittest2.TestCase):
 
         self.assertEqual(cs.clusters[0].mass, 2)
         self.assertEqual(cs.clusters[1].mass, 1)
+
+if __name__ == '__main__':
+    unittest.main()

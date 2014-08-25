@@ -308,7 +308,7 @@ class Clusters(object):
         def _add_members():
             for c, new_members in cluster_keys.items():
                 c.add_members(new_members)
-                del cluster_keys[c]
+            cluster_keys.clear()
 
         try:
             for i, (mass, coords, key) in enumerate(items):
