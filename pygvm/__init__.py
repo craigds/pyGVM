@@ -9,7 +9,7 @@ import heapq
 import sys
 from array import array
 
-VERSION = (0, 3, 'a')
+VERSION = (0, 3, 0)
 
 
 MAX_FLOAT = sys.float_info.max
